@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -22,29 +23,33 @@ func init() {
 	flag.StringVar(&host, "host", "localhost", "host location")
 }
 
-func handleRequest(conn net.Conn) {
+func handleRequest(conn net.Conn,ctx context.Context) {
 	defer conn.Close()
 
-	var buffer []byte
+	var buf [128]byte
 
 	for {
-		n, err := conn.Read(buffer)
-		if err == io.EOF{
+		n, err := conn.Read(buf[:])
+		if err == io.EOF {
 			return
 		}
 		if err != nil {
 			log.Errorf("read from conn err:%s", err)
 			return
 		}
-		log.Infof("Message length:%d",n)
-		log.Infof("Message fron conn:%s", string(buffer))
+		log.Infof("get message:%s", string(buf[:n]))
+		message := "hello" + string(buf[:n])
+		if _, err := conn.Write([]byte(message)); err != nil {
+			log.Errorf("write to conn err:%s", err)
+		}
 	}
 }
 
 func main() {
 	flag.Parse()
 	address := fmt.Sprintf("%s:%d", host, port)
-	log.Infof("listen on address %s",address)
+	log.Infof("listen on address %s", address)
+
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Errorf("net.Listern err:%s", err)
@@ -53,6 +58,12 @@ func main() {
 
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh, syscall.SIGTERM)
+	ctx,cancel:=context.WithCancel(context.Background())
+
+	go func(){
+		<- sigCh
+		cancel()
+	}()
 
 	// ctx, cancel := context.WithCancel(context.Background())
 	for {
@@ -62,6 +73,6 @@ func main() {
 			os.Exit(1)
 		}
 		log.Infof("accept a conn")
-		go handleRequest(conn)
+		go handleRequest(conn,ctx)
 	}
 }
