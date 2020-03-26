@@ -24,7 +24,6 @@ func main() {
 	flag.Parse()
 
 	address := fmt.Sprintf("%s:%d", host, port)
-	log.Infof("Dial on address %s", address)
 	conn, err := net.DialTimeout("tcp", address, 1*time.Second)
 	if err != nil {
 		log.Errorf("Net.Dial err:%s", err)
@@ -41,6 +40,7 @@ func main() {
 			log.Errorf("read content from stdin err:%s", err)
 			os.Exit(1)
 		}
+		log.Infof("get msg from stdin:%s",line)
 		if _, err := conn.Write([]byte(line)); err != nil {
 			log.Errorf("write message to conn err:%s", err)
 			return

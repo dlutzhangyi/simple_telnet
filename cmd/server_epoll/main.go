@@ -21,7 +21,7 @@ var (
 
 func init() {
 	flag.IntVar(&port, "port", 9000, "port to listen")
-	flag.StringVar(&host, "host", "127.0.0.1", "host address")
+	flag.StringVar(&host, "host", "", "host address")
 }
 
 func handleRequest(fd int) {
@@ -67,8 +67,8 @@ func main() {
 		os.Exit(1)
 	}
 	//listen on fd, and set backlog 1024
-	if err:=syscall.Listen(listenFd, 1024);err!=nil{
-		log.Errorf("listen on fd err:%s",err)
+	if err := syscall.Listen(listenFd, 1024); err != nil {
+		log.Errorf("listen on fd err:%s", err)
 		os.Exit(1)
 	}
 
@@ -93,6 +93,7 @@ func main() {
 			log.Errorf("epoll wait err:%s", err)
 			break
 		}
+		log.Infof("epoll wait get events count:%d", n)
 		for i := 0; i < n; i++ {
 			if int(events[i].Fd) == listenFd {
 				connFd, _, err := syscall.Accept(listenFd)
@@ -100,7 +101,7 @@ func main() {
 					log.Errorf("accept err:%s", err)
 					continue
 				}
-				log.Infof("accept a conn, fd is %d",connFd)
+				log.Infof("accept a conn, fd is %d", connFd)
 				syscall.SetNonblock(listenFd, true)
 
 				event.Events = syscall.EPOLLIN | (syscall.EPOLLET & 0xffffffff)
@@ -110,7 +111,7 @@ func main() {
 					os.Exit(1)
 				}
 			} else {
-				log.Infof("handle request with fd:%d",int(events[i].Fd))
+				log.Infof("handle request with fd:%d", int(events[i].Fd))
 				go handleRequest(int(events[i].Fd))
 			}
 		}

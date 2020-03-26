@@ -20,7 +20,7 @@ var (
 
 func init() {
 	flag.IntVar(&port, "port", 9000, "port to listern")
-	flag.StringVar(&host, "host", "localhost", "host location")
+	flag.StringVar(&host, "host", "", "host location")
 }
 
 func handleRequest(conn net.Conn,ctx context.Context) {
